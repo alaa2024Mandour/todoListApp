@@ -27,7 +27,8 @@ const TodoTile({super.key,
             Checkbox(
                 value: isCompleted ,
                 onChanged: onchange,
-                activeColor: Colors.black,),
+            ),
+
             Text(taskName,
             style:  TextStyle(
                 fontSize: 16,

@@ -8,6 +8,8 @@ class ShowDialog extends StatelessWidget {
   VoidCallback onSave;
   VoidCallback onCancel;
 
+  var _formKey = GlobalKey<FormState>();
+
 
   ShowDialog({
     required this.onCancel,
@@ -19,22 +21,33 @@ class ShowDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.grey.shade900,
-      content: TextField(
-        controller: taskController,
-        style: const TextStyle(
-          color: Colors.white
-        ),
-        decoration: InputDecoration(
-          label:const Text(
-            "Add a new task",
-            style: TextStyle(
-              color: Colors.white
-            ),
-          ) ,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: Colors.white, width: 2),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: taskController,
+          style: const TextStyle(
+            color: Colors.white
           ),
+          decoration: InputDecoration(
+            label:const Text(
+              "Add a new task",
+              style: TextStyle(
+                color: Colors.white
+              ),
+            ) ,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(color: Colors.white, width: 2),
+            ),
+          ),
+          validator: (value){
+            if(value==null || value.isEmpty){
+              return "Please Enter Your Task";
+            }else{
+              return null;
+            }
+          },
+          autovalidateMode: AutovalidateMode.onUserInteraction,
         ),
       ),
       actions: [
@@ -46,7 +59,9 @@ class ShowDialog extends StatelessWidget {
 
         ElevatedButton(
             onPressed: (){
-              onSave();
+              if(_formKey.currentState?.validate()==true){
+                onSave();
+              }
             },
             child: Text("Save")),
       ],
