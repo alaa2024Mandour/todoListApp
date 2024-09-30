@@ -1,55 +1,34 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
+import 'package:todo_list_app/data/models/todo_model.dart';
+import 'package:todo_list_app/data/todo_database.dart';
 import 'package:todo_list_app/layouts/show_dialog.dart';
 import 'package:todo_list_app/layouts/todo_tile.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+import '../cubit/todo_cubit.dart';
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
+class HomePage extends StatelessWidget {
+   HomePage({super.key});
 
-class _HomePageState extends State<HomePage> {
-  List todTasks=[
-    ["Do Exercise",
-      true,
-    ],
-
-    ["Go To The Gym",
-      false,
-    ],
-
-    ["Flutter Meeting",
-      true,
-    ],
-  ];
-
-  void onCheckBoxChanged(bool?value,int index){
-    setState(() {
-      todTasks[index][1]=!todTasks[index][1];
-    });
-  }
-
-  void showTaskDialog(){
-    setState(() {
+  void showTaskDialog(BuildContext context){
      showDialog(
          context: context,
-         builder: (BuildContext context) => ShowDialog(onCancel:onCancelDialog, onSave:onSaveDialog, taskController: controller,) );
-    });
+         builder: (BuildContext context) => ShowDialog(
+           onCancel:() => onCancelDialog(context),
+           onSave:() => onSaveDialog(context),
+           taskController: controller,) );
   }
 
   var controller = TextEditingController();
 
-  onCancelDialog(){
+  onCancelDialog(BuildContext context){
     controller.clear();
     Navigator.pop(context);
   }
 
-  onSaveDialog(){
-    setState(() {
-      todTasks.add([controller.text,false]);
-    });
+  onSaveDialog(BuildContext context){
+    context.read<TodoCubit>().addTodo(controller.text);
     controller.clear();
     Navigator.pop(context);
   }
@@ -57,50 +36,67 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade300,
       appBar: AppBar(
-  backgroundColor: Colors.grey.shade900,
   title: const Text(
     "TodoApp",
     style: TextStyle(
       color: Colors.white
     ),
   ),
+        actions: [
+          IconButton(
+              onPressed: (){
+                Navigator.pushNamed(context,"/SettingScreen" );
+              },
+              icon: Container(
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12)
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Icon(Icons.settings),
+                ),
+              ))
+        ],
 ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ListView.builder(
-          itemCount: todTasks.length,
-          itemBuilder: (BuildContext context, int index) {
+      body:BlocBuilder<TodoCubit,List<TodoModel>>
+        (
+          builder: (BuildContext context, todoList){
+            var todoCubit = context.read<TodoCubit>();
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Dismissible(
-                key: Key(todTasks[index].toString()),
-                direction: DismissDirection.endToStart,
-                onDismissed: (direction){
-                  setState(() {
-                    todTasks.removeAt(index);
-                  });
+              padding: const EdgeInsets.all(20.0),
+              child: ListView.builder(
+                itemCount: todoList.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: Dismissible(
+                      key: Key(todoList[index].toString()),
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (direction){
+                          todoCubit.deleteTodo(index);
+                      },
+                      child: TodoTile(
+                        taskName:todoList[index].task,
+                        isCompleted: todoList[index].isCompleted,
+                        onchange: (newVal) => (todoCubit.updateTodo(index)),
+                      ),
+                    ),
+                  );
                 },
-                child: TodoTile(
-                  taskName: todTasks[index][0],
-                  isCompleted: todTasks[index][1],
-                  onchange: (newVal) => onCheckBoxChanged(newVal, index),
-                  ),
               ),
             );
-          },
-        ),
+          }
+
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: (){
-          return showTaskDialog();
+          return showTaskDialog(context);
         },
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-        backgroundColor: Colors.grey.shade900,
         child: const Icon(
           Icons.add,
-          color: Colors.white,
         ),
       ),
     );
